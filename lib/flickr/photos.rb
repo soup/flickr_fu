@@ -211,10 +211,41 @@ class Flickr::Photos < Flickr::Base
   # Raises an error if photo not found
   def find_by_id(photo_id)
     rsp = @flickr.send_request('flickr.photos.getInfo', :photo_id => photo_id)
-    Photo.new(@flickr, :id => rsp.photo[:id].to_i, :owner => rsp.photo.owner,
-      :secret => rsp.photo[:secret], :server => rsp.photo[:server].to_i, :farm => rsp.photo[:farm], 
-      :title => rsp.photo.title,
-      :is_public => rsp.photo.visibility[:public], :is_friend => rsp.photo.visibility[:is_friend], :is_family => rsp.photo.visibility[:is_family])
+    
+    tags = []
+    machine_tags = []
+    
+    if rsp.photo.tags.tag
+      rsp.photo.tags.tag.each do |tag|
+        if tag[:machine_tag] == '1'
+          machine_tags << tag[:raw]
+        else
+          tags << tag[:raw]
+        end
+      end
+    end
+    
+    Photo.new(@flickr,
+      :id => rsp.photo[:id].to_i,
+      :owner => rsp.photo.owner,
+      :secret => rsp.photo[:secret],
+      :server => rsp.photo[:server].to_i,
+      :farm => rsp.photo[:farm], 
+      :title => rsp.photo.title.to_s,
+      :is_public => rsp.photo.visibility[:ispublic],
+      :is_friend => rsp.photo.visibility[:isfriend],
+      :is_family => rsp.photo.visibility[:isfamily],
+      :license_id => rsp.photo[:license].to_i,
+      :uploaded_at => (Time.at(rsp.photo[:dateuploaded].to_i) rescue nil),
+      :taken_at => (Time.parse(rsp.photo.dates[:taken]) rescue nil),
+      :owner_name => rsp.photo.owner[:username],
+      :icon_server => rsp.photo[:icon_server],
+      :original_format => rsp.photo[:originalformat],
+      :updated_at => (Time.at(rsp.photo.dates[:lastupdate].to_i) rescue nil),
+      :tags => tags,
+      :machine_tags => machine_tags,
+      :views => rsp.photo[:views].to_i,
+      :media => rsp.photo[:media])
   end
   
   protected
