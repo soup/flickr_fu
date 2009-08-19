@@ -39,10 +39,13 @@ end
 
 include CommonThread::XML
 
-class Object
-  # returning allows you to pass an object to a block that you can manipulate returning the manipulated object
-  def returning(value)
-    yield(value)
-    value
+# Rails' ActiveSupport also contains this, we don't want to override it in that case.
+unless defined?(Object::returning)
+  class Object
+    # returning allows you to pass an object to a block that you can manipulate returning the manipulated object
+    def returning(value)
+      yield(value)
+      value
+    end
   end
 end
